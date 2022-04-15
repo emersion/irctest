@@ -17,36 +17,36 @@ from irctest.patma import ANYDICT, ANYOPTSTR, NotStrRe, RemainingKeys, StrRe
 class LabeledResponsesTestCase(cases.BaseServerTestCase):
     @cases.mark_capabilities("echo-message", "batch", "labeled-response")
     def testLabeledPrivmsgResponsesToMultipleClients(self):
-        self.connectClient(
-            "foo",
+        sender = self.connectClient(
+            "sender",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
-        self.connectClient(
-            "bar",
+        self.getMessages(sender)
+        rcpt1 = self.connectClient(
+            "rcpt1",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(2)
-        self.connectClient(
-            "carl",
+        self.getMessages(rcpt1)
+        rcpt2 = self.connectClient(
+            "rcpt2",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(3)
-        self.connectClient(
-            "alice",
+        self.getMessages(rcpt2)
+        rcpt3 = self.connectClient(
+            "rcpt3",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(4)
+        self.getMessages(rcpt3)
 
-        self.sendLine(1, "@label=12345 PRIVMSG bar,carl,alice :hi")
-        m = self.getMessage(1)
-        m2 = self.getMessage(2)
-        m3 = self.getMessage(3)
-        m4 = self.getMessage(4)
+        self.sendLine(sender, "@label=12345 PRIVMSG rcpt1,rcpt2,rcpt3 :hi")
+        m = self.getMessage(sender)
+        m2 = self.getMessage(rcpt1)
+        m3 = self.getMessage(rcpt2)
+        m4 = self.getMessage(rcpt3)
 
         # ensure the label isn't sent to recipients
         self.assertMessageMatch(m2, command="PRIVMSG", tags={})
@@ -63,22 +63,22 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
 
     @cases.mark_capabilities("echo-message", "batch", "labeled-response")
     def testLabeledPrivmsgResponsesToClient(self):
-        self.connectClient(
-            "foo",
+        sender = self.connectClient(
+            "sender",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
-        self.connectClient(
-            "bar",
+        self.getMessages(sender)
+        recipient = self.connectClient(
+            "recipient",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(2)
+        self.getMessages(recipient)
 
-        self.sendLine(1, "@label=12345 PRIVMSG bar :hi")
-        m = self.getMessage(1)
-        m2 = self.getMessage(2)
+        self.sendLine(sender, "@label=12345 PRIVMSG recipient :hi")
+        m = self.getMessage(sender)
+        m2 = self.getMessage(recipient)
 
         # ensure the label isn't sent to recipient
         self.assertMessageMatch(m2, command="PRIVMSG", tags={})
@@ -88,31 +88,31 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
     @pytest.mark.react_tag
     @cases.mark_capabilities("echo-message", "batch", "labeled-response")
     def testLabeledPrivmsgResponsesToChannel(self):
-        self.connectClient(
-            "foo",
+        sender = self.connectClient(
+            "sender",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
-        self.connectClient(
-            "bar",
+        self.getMessages(sender)
+        recipient = self.connectClient(
+            "recipient",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(2)
+        self.getMessages(recipient)
 
         # join channels
-        self.sendLine(1, "JOIN #test")
-        self.getMessages(1)
-        self.sendLine(2, "JOIN #test")
-        self.getMessages(2)
-        self.getMessages(1)
+        self.sendLine(sender, "JOIN #test")
+        self.getMessages(sender)
+        self.sendLine(recipient, "JOIN #test")
+        self.getMessages(recipient)
+        self.getMessages(sender)
 
         self.sendLine(
-            1, "@label=12345;+draft/reply=123;+draft/react=l😃l PRIVMSG #test :hi"
+            sender, "@label=12345;+draft/reply=123;+draft/react=l😃l PRIVMSG #test :hi"
         )
-        ms = self.getMessage(1)
-        mt = self.getMessage(2)
+        ms = self.getMessage(sender)
+        mt = self.getMessage(recipient)
 
         # ensure the label isn't sent to recipient
         self.assertMessageMatch(mt, command="PRIVMSG", tags={})
@@ -122,16 +122,16 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
 
     @cases.mark_capabilities("echo-message", "batch", "labeled-response")
     def testLabeledPrivmsgResponsesToSelf(self):
-        self.connectClient(
-            "foo",
+        c = self.connectClient(
+            "client",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
+        self.getMessages(c)
 
-        self.sendLine(1, "@label=12345 PRIVMSG foo :hi")
-        m1 = self.getMessage(1)
-        m2 = self.getMessage(1)
+        self.sendLine(c, "@label=12345 PRIVMSG client :hi")
+        m1 = self.getMessage(c)
+        m2 = self.getMessage(c)
 
         number_of_labels = 0
         for m in [m1, m2]:
@@ -165,22 +165,22 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
 
     @cases.mark_capabilities("echo-message", "batch", "labeled-response")
     def testLabeledNoticeResponsesToClient(self):
-        self.connectClient(
-            "foo",
+        sender = self.connectClient(
+            "sender",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
-        self.connectClient(
-            "bar",
+        self.getMessages(sender)
+        recipient = self.connectClient(
+            "recipient",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(2)
+        self.getMessages(recipient)
 
-        self.sendLine(1, "@label=12345 NOTICE bar :hi")
-        m = self.getMessage(1)
-        m2 = self.getMessage(2)
+        self.sendLine(sender, "@label=12345 NOTICE recipient :hi")
+        m = self.getMessage(sender)
+        m2 = self.getMessage(recipient)
 
         # ensure the label isn't sent to recipient
         self.assertMessageMatch(m2, command="NOTICE", tags={})
@@ -190,31 +190,31 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
     @pytest.mark.react_tag
     @cases.mark_capabilities("echo-message", "batch", "labeled-response")
     def testLabeledNoticeResponsesToChannel(self):
-        self.connectClient(
-            "foo",
+        sender = self.connectClient(
+            "sender",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
-        self.connectClient(
-            "bar",
+        self.getMessages(sender)
+        recipient = self.connectClient(
+            "recipient",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(2)
+        self.getMessages(recipient)
 
         # join channels
-        self.sendLine(1, "JOIN #test")
-        self.getMessages(1)
-        self.sendLine(2, "JOIN #test")
-        self.getMessages(2)
-        self.getMessages(1)
+        self.sendLine(sender, "JOIN #test")
+        self.getMessages(sender)
+        self.sendLine(recipient, "JOIN #test")
+        self.getMessages(recipient)
+        self.getMessages(sender)
 
         self.sendLine(
-            1, "@label=12345;+draft/reply=123;+draft/react=l😃l NOTICE #test :hi"
+            sender, "@label=12345;+draft/reply=123;+draft/react=l😃l NOTICE #test :hi"
         )
-        ms = self.getMessage(1)
-        mt = self.getMessage(2)
+        ms = self.getMessage(sender)
+        mt = self.getMessage(recipient)
 
         # ensure the label isn't sent to recipient
         self.assertMessageMatch(mt, command="NOTICE", tags={})
@@ -224,16 +224,16 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
 
     @cases.mark_capabilities("echo-message", "batch", "labeled-response")
     def testLabeledNoticeResponsesToSelf(self):
-        self.connectClient(
-            "foo",
+        c = self.connectClient(
+            "client",
             capabilities=["echo-message", "batch", "labeled-response"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
+        self.getMessages(c)
 
-        self.sendLine(1, "@label=12345 NOTICE foo :hi")
-        m1 = self.getMessage(1)
-        m2 = self.getMessage(1)
+        self.sendLine(c, "@label=12345 NOTICE client :hi")
+        m1 = self.getMessage(c)
+        m2 = self.getMessage(c)
 
         number_of_labels = 0
         for m in [m1, m2]:
@@ -268,29 +268,30 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
         "echo-message", "batch", "labeled-response", "message-tags"
     )
     def testLabeledTagMsgResponsesToClient(self):
-        self.connectClient(
-            "foo",
+        sender = self.connectClient(
+            "sender",
             capabilities=["echo-message", "batch", "labeled-response", "message-tags"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
-        self.connectClient(
-            "bar",
+        self.getMessages(sender)
+        recipient = self.connectClient(
+            "recipient",
             capabilities=["echo-message", "batch", "labeled-response", "message-tags"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(2)
+        self.getMessages(recipient)
 
         # Need to get a valid msgid because Unreal validates them
-        self.sendLine(1, "PRIVMSG bar :hi")
-        msgid = self.getMessage(1).tags["msgid"]
-        assert msgid == self.getMessage(2).tags["msgid"]
+        self.sendLine(sender, "PRIVMSG recipient :hi")
+        msgid = self.getMessage(sender).tags["msgid"]
+        assert msgid == self.getMessage(recipient).tags["msgid"]
 
         self.sendLine(
-            1, f"@label=12345;+draft/reply={msgid};+draft/react=l😃l TAGMSG bar"
+            sender,
+            f"@label=12345;+draft/reply={msgid};+draft/react=l😃l TAGMSG recipient",
         )
-        m = self.getMessage(1)
-        m2 = self.getMessage(2)
+        m = self.getMessage(sender)
+        m2 = self.getMessage(recipient)
 
         # ensure the label isn't sent to recipient
         self.assertMessageMatch(
@@ -329,36 +330,36 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
         "echo-message", "batch", "labeled-response", "message-tags"
     )
     def testLabeledTagMsgResponsesToChannel(self):
-        self.connectClient(
-            "foo",
+        sender = self.connectClient(
+            "sender",
             capabilities=["echo-message", "batch", "labeled-response", "message-tags"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
-        self.connectClient(
-            "bar",
+        self.getMessages(sender)
+        recipient = self.connectClient(
+            "recipient",
             capabilities=["echo-message", "batch", "labeled-response", "message-tags"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(2)
+        self.getMessages(recipient)
 
         # join channels
-        self.sendLine(1, "JOIN #test")
-        self.getMessages(1)
-        self.sendLine(2, "JOIN #test")
-        self.getMessages(2)
-        self.getMessages(1)
+        self.sendLine(sender, "JOIN #test")
+        self.getMessages(sender)
+        self.sendLine(recipient, "JOIN #test")
+        self.getMessages(recipient)
+        self.getMessages(sender)
 
         # Need to get a valid msgid because Unreal validates them
-        self.sendLine(1, "PRIVMSG #test :hi")
-        msgid = self.getMessage(1).tags["msgid"]
-        assert msgid == self.getMessage(2).tags["msgid"]
+        self.sendLine(sender, "PRIVMSG #test :hi")
+        msgid = self.getMessage(sender).tags["msgid"]
+        assert msgid == self.getMessage(recipient).tags["msgid"]
 
         self.sendLine(
-            1, f"@label=12345;+draft/reply={msgid};+draft/react=l😃l TAGMSG #test"
+            sender, f"@label=12345;+draft/reply={msgid};+draft/react=l😃l TAGMSG #test"
         )
-        ms = self.getMessage(1)
-        mt = self.getMessage(2)
+        ms = self.getMessage(sender)
+        mt = self.getMessage(recipient)
 
         # ensure the label isn't sent to recipient
         self.assertMessageMatch(
@@ -394,16 +395,16 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
         "echo-message", "batch", "labeled-response", "message-tags"
     )
     def testLabeledTagMsgResponsesToSelf(self):
-        self.connectClient(
-            "foo",
+        c = self.connectClient(
+            "client",
             capabilities=["echo-message", "batch", "labeled-response", "message-tags"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
+        self.getMessages(c)
 
-        self.sendLine(1, "@label=12345;+draft/reply=123;+draft/react=l😃l TAGMSG foo")
-        m1 = self.getMessage(1)
-        m2 = self.getMessage(1)
+        self.sendLine(c, "@label=12345;+draft/reply=123;+draft/react=l😃l TAGMSG client")
+        m1 = self.getMessage(c)
+        m2 = self.getMessage(c)
 
         number_of_labels = 0
         for m in [m1, m2]:
@@ -435,15 +436,15 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
 
     @cases.mark_capabilities("batch", "labeled-response", "message-tags", "server-time")
     def testBatchedJoinMessages(self):
-        self.connectClient(
-            "bar",
+        c = self.connectClient(
+            "client",
             capabilities=["batch", "labeled-response", "message-tags", "server-time"],
             skip_if_cap_nak=True,
         )
-        self.getMessages(1)
+        self.getMessages(c)
 
-        self.sendLine(1, "@label=12345 JOIN #xyz")
-        m = self.getMessages(1)
+        self.sendLine(c, "@label=12345 JOIN #xyz")
+        m = self.getMessages(c)
 
         # we expect at least join and names lines, which must be batched
         self.assertGreaterEqual(len(m), 3)
@@ -473,32 +474,32 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
 
     @cases.mark_capabilities("labeled-response")
     def testNoBatchForSingleMessage(self):
-        self.connectClient(
-            "bar", capabilities=["batch", "labeled-response"], skip_if_cap_nak=True
+        c = self.connectClient(
+            "client", capabilities=["batch", "labeled-response"], skip_if_cap_nak=True
         )
-        self.getMessages(1)
+        self.getMessages(c)
 
-        self.sendLine(1, "@label=98765 PING adhoctestline")
+        self.sendLine(c, "@label=98765 PING adhoctestline")
         # no BATCH should be initiated for a one-line response,
         # it should just be labeled
-        m = self.getMessage(1)
+        m = self.getMessage(c)
         self.assertMessageMatch(m, command="PONG", tags={"label": "98765"})
         self.assertEqual(m.params[-1], "adhoctestline")
 
     @cases.mark_capabilities("labeled-response")
     def testEmptyBatchForNoResponse(self):
-        self.connectClient(
-            "bar", capabilities=["batch", "labeled-response"], skip_if_cap_nak=True
+        c = self.connectClient(
+            "client", capabilities=["batch", "labeled-response"], skip_if_cap_nak=True
         )
-        self.getMessages(1)
+        self.getMessages(c)
 
         # PONG never receives a response
-        self.sendLine(1, "@label=98765 PONG adhoctestline")
+        self.sendLine(c, "@label=98765 PONG adhoctestline")
 
         # labeled-response: "Servers MUST respond with a labeled
         # `ACK` message when a client sends a labeled command that normally
         # produces no response."
-        ms = self.getMessages(1)
+        ms = self.getMessages(c)
         self.assertEqual(len(ms), 1)
         ack = ms[0]
 
@@ -506,14 +507,14 @@ class LabeledResponsesTestCase(cases.BaseServerTestCase):
 
     @cases.mark_capabilities("labeled-response")
     def testUnknownCommand(self):
-        self.connectClient(
-            "bar", capabilities=["batch", "labeled-response"], skip_if_cap_nak=True
+        c = self.connectClient(
+            "client", capabilities=["batch", "labeled-response"], skip_if_cap_nak=True
         )
 
         # this command doesn't exist, but the error response should still
         # be labeled:
-        self.sendLine(1, "@label=deadbeef NONEXISTENT_COMMAND")
-        ms = self.getMessages(1)
+        self.sendLine(c, "@label=deadbeef NONEXISTENT_COMMAND")
+        ms = self.getMessages(c)
         self.assertEqual(len(ms), 1)
         unknowncommand = ms[0]
         self.assertMessageMatch(

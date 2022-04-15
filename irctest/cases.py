@@ -671,7 +671,7 @@ class BaseServerTestCase(
         account: Optional[str] = None,
         password: Optional[str] = None,
         ident: str = "username",
-    ) -> List[Message]:
+    ) -> TClientName:
         """Connections a new client, does the cap negotiation
         and connection registration, and skips to the end of the MOTD.
         Returns the list of all messages received after registration,
@@ -691,7 +691,7 @@ class BaseServerTestCase(
         if capabilities:
             self.sendLine(client, "CAP END")
 
-        welcome = self.skipToWelcome(client)
+        self.skipToWelcome(client)
         self.sendLine(client, "PING foo")
 
         # Skip all that happy welcoming stuff
@@ -707,9 +707,8 @@ class BaseServerTestCase(
                         self.server_support[key] = value
                     else:
                         self.server_support[param] = None
-            welcome.append(m)
 
-        return welcome
+        return client
 
     def joinClient(self, client: TClientName, channel: str) -> None:
         self.sendLine(client, "JOIN {}".format(channel))
