@@ -119,14 +119,14 @@ flakes:
 	find irctest/ -name "*.py" -not -path "irctest/scram/*" -print0 | xargs -0 pyflakes3
 
 bahamut:
-	$(PYTEST) $(PYTEST_ARGS) \
+	strace -f $(PYTEST) $(PYTEST_ARGS) \
 		--controller=irctest.controllers.bahamut \
 		-m 'not services' \
 		-vv -s \
 		-k '$(BAHAMUT_SELECTORS)'
 
 bahamut-atheme:
-	$(PYTEST) $(PYTEST_ARGS) \
+	strace -f $(PYTEST) $(PYTEST_ARGS) \
 		--controller=irctest.controllers.bahamut \
 		--services-controller=irctest.controllers.atheme_services \
 		-m 'services' \
@@ -134,7 +134,7 @@ bahamut-atheme:
 		-k '$(BAHAMUT_SELECTORS)'
 
 bahamut-anope:
-	$(PYTEST) $(PYTEST_ARGS) \
+	strace -f $(PYTEST) $(PYTEST_ARGS) \
 		--controller=irctest.controllers.bahamut \
 		--services-controller=irctest.controllers.anope_services \
 		-m 'services' \
