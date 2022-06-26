@@ -247,7 +247,7 @@ class BaseServerController(_BaseController):
 
                 c.close()
                 self.port_open = True
-            except Exception:
+            finally:
                 continue
 
     def wait_for_services(self) -> None:
