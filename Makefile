@@ -119,7 +119,7 @@ flakes:
 	find irctest/ -name "*.py" -not -path "irctest/scram/*" -print0 | xargs -0 pyflakes3
 
 bahamut:
-	strace -f $(PYTEST) $(PYTEST_ARGS) \
+	$(PYTEST) $(PYTEST_ARGS) \
 		--controller=irctest.controllers.bahamut \
 		-m 'not services' \
 		-vv -s \
