@@ -248,7 +248,7 @@ class BaseServerController(_BaseController):
                 c.close()
                 self.port_open = True
             finally:
-                continue
+                pass
 
     def wait_for_services(self) -> None:
         assert self.services_controller
